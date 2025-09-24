@@ -27,7 +27,7 @@ DB_DATABASE=app
 DB_USERNAME=app
 DBPASSWORD=app
 ```
-2. `docker compose run --rm artisan migrate
+2. `docker compose run --rm artisan migrate`
 
 ### 3. Start Containers
 `docker compose up -d`
