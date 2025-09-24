@@ -1,0 +1,13 @@
+{
+	"servers": {
+		"boost": {
+			"type": "stdio",
+			"command": "php",
+			"args": [
+				"src/artisan",
+				"boost:mcp"
+			]
+		}
+	},
+	"inputs": []
+}

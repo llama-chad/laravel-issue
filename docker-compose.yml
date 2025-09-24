@@ -1,0 +1,175 @@
+networks:
+  laravel:
+  routable:
+    external: true
+
+x-laravel: &default-laravel
+  restart: unless-stopped
+  build:
+    context: ./dockerfiles
+    dockerfile: laravel.dockerfile
+    args:
+      - UID=${UID:-1000}
+      - GID=${GID:-1000}
+  volumes:
+    - ./src:/app
+  working_dir: /app
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  networks:
+    - laravel
+
+services:
+  app-dev:
+    image: caddy:alpine
+    profiles:
+      - dev
+    restart: unless-stopped
+    ports:
+      - ${APP_PORT:-80}:80
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./src:/app
+      - ./caddy_data:/data
+    working_dir: /app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - laravel
+    depends_on:
+      - php
+
+  php:
+    <<: *default-laravel
+    environment:
+      - PHP_MEMORY_LIMIT=4G
+    profiles:
+      - dev
+
+  postgres:
+    image: postgres:alpine
+    restart: unless-stopped
+    ports:
+      - ${DB_PORT:-5432}:5432
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${DB_USER:-laravel}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      POSTGRES_DB: ${DB_DATABASE:-laravel}
+    networks:
+      - laravel
+    profiles:
+      - dev
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - ${PGADMIN_PORT:-5050}:80
+    volumes:
+      - ./pgadmin:/var/lib/pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_LISTEN_ADDRESS: ${PGADMIN_LISTEN_ADDRESS:-0.0.0.0}
+      PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: ${PGADMIN_CONFIG_CONSOLE_LOG_LEVEL:-10}
+    networks:
+      - laravel
+    profiles:
+      - dev
+
+  # Open-Source Redis Alternative Valkey
+  valkey:
+    image: valkey/valkey:alpine
+    restart: unless-stopped
+    networks:
+      - laravel
+    profiles:
+      - dev
+
+  composer:
+    <<: *default-laravel
+    entrypoint: [ 'composer', '--ignore-platform-reqs' ]
+    networks:
+      - laravel
+    profiles:
+      - setup
+
+  pnpm:
+    <<: *default-laravel
+    ports:
+      - "5173:5173"
+    entrypoint: [ 'pnpm' ]
+    networks:
+      - laravel
+    profiles:
+      - setup
+
+  artisan:
+    <<: *default-laravel
+    entrypoint:
+      - php
+      - -d
+      - memory_limit=4G
+      - /app/artisan
+    ports:
+      - "6274:6274"
+    networks:
+      - laravel
+    profiles:
+      - direct
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    restart: unless-stopped
+    ports:
+      - "1028:1025"
+      - "8028:8025"
+    networks:
+      - laravel
+    profiles:
+      - dev
+
+  pint:
+    <<: *default-laravel
+    entrypoint:
+      - ./vendor/bin/pint
+    profiles:
+      - direct
+
+  laravel:
+    <<: *default-laravel
+    volumes:
+      - .:/app
+    entrypoint: [ '/home/laravel/.composer/vendor/bin/laravel' ]
+    profiles:
+      - setup
+
+  boost:
+    <<: *default-laravel
+    entrypoint: [ 'php', 'artisan', 'boost:mcp' ]
+    stdin_open: true # Important for STDIO transport
+    tty: true
+    profiles:
+      - direct
+
+  boost-inspect:
+    <<: *default-laravel
+    entrypoint: [ 'php', 'artisan', 'mcp:inspector', 'laravel-boost' ]
+    volumes:
+      - ./src:/app
+    working_dir: /app
+    ports:
+      - "6274:6274"
+      - "6277:6277"
+      - "9000:9000"
+    stdin_open: true
+    tty: true
+    profiles:
+      - direct
+    networks:
+      - default
+      - laravel

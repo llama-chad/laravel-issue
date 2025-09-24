@@ -1,0 +1,12 @@
+mysql
+.DS_Store
+.idea
+.env
+dockerfiles/*.crt
+dockerfiles/*.key
+dockerfiles/*.pem
+pgadmin
+pgdata
+postgres
+caddy_data
+node_modules
