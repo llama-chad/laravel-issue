@@ -7,11 +7,12 @@ Below are all the steps taken to reproduce this repository and the issue.
 1. Copy .env.example to .env
 2. set UID and GID environment variables
 
-### 1. Install Laravel `docker compose run --rm laravel new src --github="--public"`.
-1. Vue
-2. Built-In Auth
-3. Pest
-4. Skipped install npm depenedencies
+### 1. Install Laravel 
+`docker compose run --rm laravel new src --github="--public"`
+- Vue
+- Built-In Auth
+- Pest
+- Skipped install npm depenedencies
 
 ### 2.  Install/Build NPM Dependencies
 1. Install missing dependencies `docker compose run --rm pnpm install lightningcss-linux-arm64-musl lightningcss-linux-x64-gnu lightningcss-linux-x64-musl --save-optional`
