@@ -38,7 +38,7 @@ DBPASSWORD=app
 - Claude Code
 - Cursor
 - VS Code
-
+---
 - Claude Code
 - Codex
 - Cursor
